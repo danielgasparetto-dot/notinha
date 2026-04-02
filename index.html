@@ -223,7 +223,7 @@
 <script>
 // ─── CONFIG ────────────────────────────────────────────────────────────────
 const CONFIG = {
-  sheetId: '1uQyBkMUYMZlSMZ_KKwSQtPX1FMun_zRV',
+  sheetId: '1LtBQztRrKubqkgpc42wsrLTV-aFm4SWU',
   saEmail: 'docflow-bot@docflow-empresa.iam.gserviceaccount.com',
   privateKey: `-----BEGIN PRIVATE KEY-----
 MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCTcUOKayZowhSi
@@ -350,8 +350,12 @@ async function extractAI(file){
     })
   });
   const d = await res.json();
+  if(d.error) throw new Error('Anthropic: ' + (d.error.message || JSON.stringify(d.error)));
   const txt = (d.content||[]).map(b=>b.text||'').join('');
-  return JSON.parse(txt.replace(/```json|```/g,'').trim());
+  const clean = txt.replace(/```json|```/g,'').trim();
+  const m = clean.match(/\{[\s\S]*\}/);
+  if(!m) throw new Error('IA nao retornou JSON: ' + clean.substring(0,200));
+  return JSON.parse(m[0]);
 }
 
 async function writeSheet(row, token, sheetName){
