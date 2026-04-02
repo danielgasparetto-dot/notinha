@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DocFlow — Portal de Documentos</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --orange: #E07B1C;
+    --orange-light: #FFF3E8;
+    --navy: #1A1A2E;
+    --green: #2E7D32;
+    --green-light: #E8F5E9;
+    --red: #C62828;
+    --red-light: #FFEBEE;
+    --amber: #E65100;
+    --amber-light: #FFF8E1;
+    --gray-50: #F9F9F9;
+    --gray-100: #F0F0F0;
+    --gray-200: #E0E0E0;
+    --gray-500: #9E9E9E;
+    --gray-700: #444;
+    --text: #1A1A1A;
+    --text-muted: #666;
+    --border: #E0E0E0;
+    --radius: 10px;
+    --radius-sm: 7px;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #F5F5F5;
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-mark {
+    width: 32px; height: 32px; border-radius: 9px;
+    background: var(--orange); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 600;
+  }
+  .logo-text { font-size: 16px; font-weight: 600; }
+  nav { display: flex; gap: 4px; }
+  nav button {
+    padding: 7px 16px; border-radius: 7px; border: none;
+    cursor: pointer; font-size: 13px; font-weight: 500;
+    background: transparent; color: var(--text-muted);
+    transition: all .15s;
+  }
+  nav button.active { background: var(--gray-100); color: var(--text); }
+  main { flex: 1; display: flex; justify-content: center; padding: 32px 16px; }
+  .panel { background: #fff; border-radius: 14px; border: 1px solid var(--border); width: 100%; max-width: 560px; overflow: hidden; }
+
+  /* upload */
+  .dropzone {
+    border: 2px dashed var(--border); border-radius: var(--radius);
+    padding: 52px 24px; text-align: center; cursor: pointer;
+    transition: border-color .2s, background .2s; margin: 24px;
+  }
+  .dropzone:hover, .dropzone.drag { border-color: var(--orange); background: var(--orange-light); }
+  .dz-icon {
+    width: 52px; height: 52px; border-radius: 14px;
+    background: rgba(224,123,28,.12); display: flex; align-items: center;
+    justify-content: center; margin: 0 auto 14px;
+  }
+  .dz-title { font-size: 17px; font-weight: 600; margin-bottom: 6px; }
+  .dz-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.6; }
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 10px 22px; border-radius: 8px; border: none;
+    background: var(--orange); color: #fff; font-size: 14px;
+    font-weight: 500; cursor: pointer; transition: opacity .15s;
+  }
+  .btn-primary:hover { opacity: .9; }
+  .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-secondary {
+    padding: 10px 18px; border-radius: 8px;
+    border: 1px solid var(--border); background: transparent;
+    color: var(--text); font-size: 14px; cursor: pointer;
+    transition: background .15s;
+  }
+  .btn-secondary:hover { background: var(--gray-50); }
+  .file-preview {
+    display: flex; align-items: center; gap: 12px;
+    padding: 13px 16px; background: var(--gray-50);
+    border-radius: var(--radius); margin: 0 24px 16px;
+  }
+  .file-icon {
+    width: 40px; height: 40px; border-radius: 8px;
+    background: var(--orange-light); color: var(--orange);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; flex-shrink: 0;
+  }
+  .info-box {
+    margin: 0 24px 20px; padding: 13px 16px;
+    background: var(--gray-50); border-radius: var(--radius);
+    font-size: 13px; color: var(--text-muted); line-height: 1.7;
+  }
+  .actions { display: flex; gap: 10px; padding: 0 24px 24px; }
+  .section-pad { padding: 24px; }
+
+  /* processing */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.4} }
+  .spinner {
+    width: 48px; height: 48px; border: 3px solid var(--border);
+    border-top-color: var(--orange); border-radius: 50%;
+    animation: spin .9s linear infinite; margin: 0 auto 20px;
+  }
+  .dots span {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--gray-200); display: inline-block; margin: 0 3px;
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+  .dots span:nth-child(2){ animation-delay:.2s }
+  .dots span:nth-child(3){ animation-delay:.4s }
+
+  /* result */
+  .result-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin: 0 24px 16px; }
+  .metric {
+    background: var(--gray-50); border-radius: var(--radius-sm);
+    padding: 12px; text-align: center;
+  }
+  .metric-val { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+  .metric-label { font-size: 11px; color: var(--text-muted); }
+  .data-card {
+    margin: 0 24px 16px; border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+  }
+  .data-card-header {
+    padding: 11px 16px; background: var(--gray-50);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .data-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 16px; border-bottom: 1px solid var(--gray-100);
+  }
+  .data-row:last-child { border-bottom: none; }
+  .data-label { font-size: 12px; color: var(--text-muted); }
+  .data-value { font-size: 13px; font-weight: 500; text-align: right; max-width: 55%; }
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 500;
+  }
+  .badge-success { background: var(--green-light); color: var(--green); }
+  .badge-warning { background: var(--amber-light); color: var(--amber); }
+  .badge-error { background: var(--red-light); color: var(--red); }
+  .doc-id-bar {
+    margin: 0 24px 16px; padding: 11px 16px;
+    background: var(--gray-50); border-radius: var(--radius);
+    font-size: 12px; color: var(--text-muted);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .error-box {
+    margin: 24px; padding: 16px; background: var(--red-light);
+    border-radius: var(--radius); font-size: 13px;
+    color: var(--red); line-height: 1.6;
+  }
+
+  /* dashboard */
+  .stats-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; margin-bottom: 20px; }
+  .stat-card {
+    background: var(--gray-50); border-radius: var(--radius);
+    padding: 16px; text-align: center;
+  }
+  .stat-val { font-size: 24px; font-weight: 600; margin-bottom: 4px; }
+  .stat-label { font-size: 12px; color: var(--text-muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th {
+    text-align: left; padding: 9px 12px; color: var(--text-muted);
+    font-weight: 500; border-bottom: 1px solid var(--border);
+    background: var(--gray-50); font-size: 11px;
+  }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--gray-100); }
+  tr:last-child td { border-bottom: none; }
+
+  .user-field { margin-bottom: 16px; }
+  .user-field label { font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 5px; }
+  .user-field input, .user-field select {
+    width: 100%; padding: 9px 12px; border: 1px solid var(--border);
+    border-radius: 8px; font-size: 13px; outline: none;
+    background: #fff; color: var(--text);
+  }
+  .user-field input:focus, .user-field select:focus { border-color: var(--orange); }
+  .link-orange { color: var(--orange); text-decoration: none; font-size: 12px; }
+  .link-orange:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-mark">D</div>
+    <span class="logo-text">DocFlow</span>
+  </div>
+  <nav>
+    <button class="active" onclick="showView('upload',this)">Enviar documento</button>
+    <button onclick="showView('dashboard',this)">Painel admin</button>
+  </nav>
+</header>
+
+<main>
+  <div class="panel" id="mainPanel">
+    <!-- conteúdo dinâmico -->
+  </div>
+</main>
+
+<input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="onFileSelected(this.files[0])">
+
+<script>
+// ─── CONFIG ────────────────────────────────────────────────────────────────
+const CONFIG = {
+  sheetId: '1uQyBkMUYMZlSMZ_KKwSQtPX1FMun_zRV',
+  saEmail: 'docflow-bot@docflow-empresa.iam.gserviceaccount.com',
+  privateKey: `-----BEGIN PRIVATE KEY-----
+MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCTcUOKayZowhSi
+2SrcKz/w+qpAFEXkY2XyPQtDI4oaSWfT0fQGXvcRWI5aDfIH5bdsT39ujCYeokuS
+Uwo/MTSrd6kHO/1ZBdAGNBxqc3pYnn1y6iB/XlHKp0fJ1siR631Oq6Iso1vBJ7ll
+E/zPmjkODi1EEnz5snkQmWITOhuPesKoQXH6o0+zDku99ScBgSl7cq7olAUYUFP6
+7V+gJIscppETCl4eVJliAVGjRG6+HNjA56+w80+rrb4G7OLJI5WrDc9jFWLzgJKA
+CbelphQdkeQ4t0qUgQxr6pLaeza+5MOMzHV47OznyXIwDXRsDazDbyeOnTnCni7Z
++JrEBj3fAgMBAAECggEAJ8zsWYIhJSg239rVmgdGxGs16ARQ9ZzrWR+nWaFPV1c3
+YtOLFuktso4AJ0kaa41UHTW8hX/pjl1rHv2xh2tl919ezmggNJbAF9ybSxUPErr9
+zDZtPVSdqaHMXCzRiapS8hict4YFb7ekcSebGANeoW+sQnLnL5RA3/03n08RP4KQ
+A1HSMyvBK1QXDjLcYDz6alJh9Tm4F+AMQ3/MUpfvKfqYK0Gpi9YEFRZgKo7YWHi4
+x81dbmHl8tN+6qMiOBRlo5jWIvIN6txLVzKty7jXEupvPyURnxulqbunIBHIF30m
+e94s+7VfQMAOeLo96f+6a9gJjgRjnykertH0uOhCYQKBgQDDACbZFiXXtuLKsU1x
+HX1CRhdiyTfy3xdaP/HiwlDwwj+SKNNO5Tza+RwXpflEnVJk/5REXp01m/zMt3Gq
+Lvb1eLW45fx4Lz6477BOfVYBEhejC49Lai4InktnmAgqwMWF0UPsp6qc6JFP+0e0
+OWf2CR1iJxm96m1axYmurEvi8QKBgQDBkJsh4tsH6KUyUzNfbV2KDn3ORu1So2CJ
+RWwK/c2OxyNfUgekXVkYJ7aKY6TtY+eXpjSuIt4tyev8jV8bUzdECIRfMTmbs0e1
+IlfczQ1AgClRZ3B7yKwr99tiIuA2Au/v4Vmbu3JXUTv+ezSHVtfzImoeklVBXFce
+uGBXq1uNzwKBgDXsddG0YTSc22xnyV2NZRUNouvrbvBXpvKLGk21pIJfhQrbBUwc
+8k4vcwhLGnpR8vYBAzRA4cJwZ2EJHYKNSDercL03xDBMCFFF3wBlgoH7SdQJn0+g
+hihV9c4o6aFA+548t0bbOr/3RC/U8ggxk8Ei1iBNZb3x9NmUJLXL6ZRRAoGBALmE
+/HrM8DszSmnifoF+08FHRGLZbgrfVd4bcINUYJjw2kE44OQzJ/pTzcvz1xZDw6uA
+fEtOVf4y4wCLCtWou3Z0Z1LJXjqR6S99fBK/YW0pqPBBoPizC/mUNGtpm9WImSkj
+pnvxe5Se4k51DZKNtKpumKE2hYoAk+t4sbY1IanXAoGAM1RL//InyL3o681IaKYj
+jMHmzIQenb8gIZv+PG79L3V/oNKIT1CkEHA52DRA6CqL397WRp9YiAu14D3aaTLY
+xMm++9srQaGs/2zpAFtUA4H37MuKie+plEjKHNFAFE0hUUh9WvAEp5Y0OpIV5FYJ
+mZ5mM1/09krFC4UmIlHgkTY=
+-----END PRIVATE KEY-----`,
+  empresa: 'Empresa Exemplo',
+  driveFolderId: '1zwbaSyqpIUNYub5tRTR2EY9x7bFhHDf3'
+};
+
+// ─── STATE ─────────────────────────────────────────────────────────────────
+let state = { file: null, token: null, tokenExp: 0, sheetName: null, docCounter: 0, history: [] };
+
+// ─── AUTH ──────────────────────────────────────────────────────────────────
+function b64url(str){ return btoa(unescape(encodeURIComponent(str))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,''); }
+function b64urlBuf(buf){ return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,''); }
+
+async function getToken(){
+  if(state.token && Date.now() < state.tokenExp - 30000) return state.token;
+  const now = Math.floor(Date.now()/1000);
+  const hdr = b64url(JSON.stringify({alg:'RS256',typ:'JWT'}));
+  const pay = b64url(JSON.stringify({
+    iss: CONFIG.saEmail,
+    scope: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive',
+    aud: 'https://oauth2.googleapis.com/token',
+    exp: now + 3600, iat: now
+  }));
+  const msg = hdr + '.' + pay;
+  const keyStr = CONFIG.privateKey.replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\n/g,'');
+  const keyBuf = Uint8Array.from(atob(keyStr), c => c.charCodeAt(0));
+  const key = await crypto.subtle.importKey('pkcs8', keyBuf, {name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'}, false, ['sign']);
+  const sig = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, new TextEncoder().encode(msg));
+  const jwt = msg + '.' + b64urlBuf(sig);
+  const res = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: {'Content-Type':'application/x-www-form-urlencoded'},
+    body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`
+  });
+  const d = await res.json();
+  if(!d.access_token) throw new Error('Autenticação falhou: ' + (d.error_description || d.error || JSON.stringify(d)));
+  state.token = d.access_token;
+  state.tokenExp = Date.now() + d.expires_in * 1000;
+  return state.token;
+}
+
+async function getSheetName(token){
+  if(state.sheetName) return state.sheetName;
+  const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.sheetId}?fields=sheets.properties`, {
+    headers: {Authorization: 'Bearer ' + token}
+  });
+  const d = await res.json();
+  if(d.error) throw new Error('Sheets: ' + d.error.message);
+  const sheets = d.sheets.map(s => s.properties.title);
+  state.sheetName = sheets.find(s => s.toLowerCase().includes('documento')) || sheets[0];
+  return state.sheetName;
+}
+
+async function uploadDrive(file, token){
+  const ts = new Date().toISOString().slice(0,10);
+  const safeName = file.name.replace(/\s+/g,'-');
+  const docId = 'DOC-' + String(++state.docCounter).padStart(6,'0');
+  const fileName = `${ts}_${safeName}`;
+  const meta = JSON.stringify({name: fileName, parents: [CONFIG.driveFolderId]});
+  const form = new FormData();
+  form.append('metadata', new Blob([meta], {type:'application/json'}));
+  form.append('file', file);
+  const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink', {
+    method: 'POST', headers: {Authorization: 'Bearer ' + token}, body: form
+  });
+  const d = await res.json();
+  if(!d.id) throw new Error('Drive upload falhou: ' + JSON.stringify(d));
+  await fetch(`https://www.googleapis.com/drive/v3/files/${d.id}/permissions`, {
+    method: 'POST',
+    headers: {Authorization: 'Bearer ' + token, 'Content-Type':'application/json'},
+    body: JSON.stringify({role:'reader', type:'anyone'})
+  });
+  return {id: d.id, link: d.webViewLink, docId, fileName};
+}
+
+async function extractAI(file){
+  const base64 = await new Promise((res,rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result.split(',')[1]);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+  const isImg = file.type.startsWith('image/');
+  const isPdf = file.type === 'application/pdf';
+  if(!isImg && !isPdf) throw new Error('Formato não suportado.');
+  const block = isImg
+    ? {type:'image', source:{type:'base64', media_type:file.type, data:base64}}
+    : {type:'document', source:{type:'base64', media_type:'application/pdf', data:base64}};
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514', max_tokens: 1000,
+      messages: [{role:'user', content:[block, {type:'text', text:`Analise o documento. Responda APENAS com JSON válido sem markdown:
+{"tipo_documento":"cupom fiscal|nota fiscal|recibo|fatura|boleto|contrato|outro","fornecedor":"nome","cnpj":"formatado ou vazio","data_compra":"DD/MM/AAAA","hora_compra":"HH:MM ou vazio","valor_total":"numero ex: 48.90","moeda":"BRL","forma_pagamento":"credito|debito|pix|dinheiro|boleto|outro","numero_documento":"ou vazio","categoria_sugerida":"alimentacao|transporte|hospedagem|material|servicos|outros","subcategoria_sugerida":"detalhe","cidade":"ou vazio","uf":"sigla ou vazio","texto_bruto":"resumo breve","confianca":85,"campos_com_duvida":"lista ou vazio","observacao_ia":"nota breve"}`}]}]
+    })
+  });
+  const d = await res.json();
+  const txt = (d.content||[]).map(b=>b.text||'').join('');
+  return JSON.parse(txt.replace(/```json|```/g,'').trim());
+}
+
+async function writeSheet(row, token, sheetName){
+  const range = encodeURIComponent(sheetName + '!A:AC');
+  const res = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.sheetId}/values/${range}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
+    {method:'POST', headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'}, body:JSON.stringify({values:[row]})}
+  );
+  const d = await res.json();
+  if(d.error) throw new Error('Sheets write: ' + d.error.message);
+  return d;
+}
+
+// ─── VIEWS ─────────────────────────────────────────────────────────────────
+const panel = document.getElementById('mainPanel');
+
+function showView(view, btn){
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  if(view === 'upload') renderUpload();
+  if(view === 'dashboard') renderDashboard();
+}
+
+function renderUpload(){
+  panel.innerHTML = `
+    <div class="section-pad">
+      <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()"
+        ondragover="event.preventDefault();this.classList.add('drag')"
+        ondragleave="this.classList.remove('drag')"
+        ondrop="this.classList.remove('drag');onFileSelected(event.dataTransfer.files[0])">
+        <div class="dz-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#E07B1C" stroke-width="2">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+        </div>
+        <div class="dz-title">Envie o documento</div>
+        <div class="dz-sub">Arraste e solte aqui, ou clique para selecionar<br>PDF, JPG, PNG — até 10 MB</div>
+        <button class="btn-primary" onclick="event.stopPropagation();document.getElementById('fileInput').click()">Selecionar arquivo</button>
+      </div>
+      <div class="info-box">
+        <strong style="font-weight:600">O que acontece ao enviar:</strong> a IA lê o documento automaticamente, o arquivo original é salvo no Google Drive e os dados extraídos vão direto para a planilha — sem precisar preencher nada manualmente.
+      </div>
+    </div>
+  `;
+}
+
+function onFileSelected(file){
+  if(!file) return;
+  state.file = file;
+  const size = file.size < 1024*1024 ? (file.size/1024).toFixed(1)+' KB' : (file.size/(1024*1024)).toFixed(1)+' MB';
+  const ext = file.name.split('.').pop().toUpperCase();
+  panel.innerHTML = `
+    <div class="section-pad">
+      <div class="file-preview" style="margin:0 0 16px">
+        <div class="file-icon">${ext}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${file.name}</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${size}</div>
+        </div>
+        <button onclick="renderUpload()" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:22px;line-height:1;padding:4px">×</button>
+      </div>
+      <div class="user-field">
+        <label>Seu nome</label>
+        <input type="text" id="userName" placeholder="Ex: Maria Silva">
+      </div>
+      <div class="user-field">
+        <label>Empresa</label>
+        <input type="text" id="userEmpresa" value="${CONFIG.empresa}">
+      </div>
+      <div class="info-box" style="margin:0 0 20px">
+        A IA vai extrair os dados, o arquivo vai para o <strong style="font-weight:600">Google Drive</strong> e os dados entram na <strong style="font-weight:600">planilha</strong> automaticamente.
+      </div>
+      <div class="actions" style="padding:0">
+        <button class="btn-primary" onclick="processDoc()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Processar com IA
+        </button>
+        <button class="btn-secondary" onclick="renderUpload()">Cancelar</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderProcessing(step){
+  panel.innerHTML = `
+    <div class="section-pad" style="text-align:center;padding:60px 24px">
+      <div class="spinner"></div>
+      <div style="font-size:16px;font-weight:500;margin-bottom:10px">${step}</div>
+      <div class="dots"><span></span><span></span><span></span></div>
+    </div>
+  `;
+}
+
+function renderResult(extracted, driveLink, docId, fileName){
+  const conf = parseInt(extracted.confianca) || 0;
+  const confColor = conf >= 80 ? 'var(--green)' : conf >= 60 ? 'var(--amber)' : 'var(--red)';
+  const fields = [
+    ['Tipo', extracted.tipo_documento],
+    ['Fornecedor', extracted.fornecedor],
+    ['CNPJ', extracted.cnpj],
+    ['Data', extracted.data_compra],
+    ['Valor total', extracted.valor_total ? 'R$ '+parseFloat(extracted.valor_total).toLocaleString('pt-BR',{minimumFractionDigits:2}) : null],
+    ['Forma de pagamento', extracted.forma_pagamento],
+    ['N° do documento', extracted.numero_documento],
+    ['Categoria', extracted.categoria_sugerida],
+    ['Cidade / UF', [extracted.cidade,extracted.uf].filter(Boolean).join(' — ')],
+  ].filter(f => f[1] && f[1].trim() && f[1] !== 'vazio');
+
+  state.history.unshift({docId, nome: state.file?.name, tipo: extracted.tipo_documento, valor: extracted.valor_total, data: extracted.data_compra, status: 'pendente_revisao', emitente: extracted.fornecedor});
+
+  panel.innerHTML = `
+    <div class="section-pad" style="padding-bottom:0">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <span style="font-size:15px;font-weight:600">Documento processado</span>
+        <span class="badge badge-success">Enviado com sucesso</span>
+      </div>
+    </div>
+    <div class="result-grid">
+      <div class="metric">
+        <div class="metric-val" style="color:var(--green)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <div class="metric-label">Google Drive</div>
+      </div>
+      <div class="metric">
+        <div class="metric-val" style="color:var(--green)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <div class="metric-label">Google Sheets</div>
+      </div>
+      <div class="metric">
+        <div class="metric-val" style="color:${confColor}">${conf}%</div>
+        <div class="metric-label">Confiança IA</div>
+      </div>
+    </div>
+    <div class="data-card">
+      <div class="data-card-header">
+        <span style="font-size:11px;font-weight:600;color:var(--text-muted);letter-spacing:.5px">DADOS EXTRAÍDOS</span>
+        <a href="${driveLink}" target="_blank" class="link-orange">Ver no Drive →</a>
+      </div>
+      ${fields.map(([l,v]) => `<div class="data-row"><span class="data-label">${l}</span><span class="data-value">${v}</span></div>`).join('')}
+      ${extracted.observacao_ia ? `<div style="padding:10px 16px;font-size:11px;color:var(--text-muted);font-style:italic">Nota IA: ${extracted.observacao_ia}</div>` : ''}
+    </div>
+    <div class="doc-id-bar">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+      <span>ID: <strong>${docId}</strong> — ${fileName}</span>
+    </div>
+    <div class="actions" style="padding:0 24px 24px">
+      <button class="btn-primary" onclick="renderUpload();state.file=null">Enviar novo documento</button>
+    </div>
+  `;
+}
+
+function renderError(msg){
+  panel.innerHTML = `
+    <div class="section-pad">
+      <div class="error-box">
+        <strong style="font-weight:600;display:block;margin-bottom:6px">Erro ao processar</strong>
+        ${msg}
+      </div>
+      <button class="btn-secondary" onclick="renderUpload()">Tentar novamente</button>
+    </div>
+  `;
+}
+
+function renderDashboard(){
+  const total = state.history.length;
+  const pendentes = state.history.filter(h=>h.status==='pendente_revisao').length;
+  const volTotal = state.history.reduce((s,h)=>{
+    const v = parseFloat((h.valor||'0').toString().replace(',','.'));
+    return s + (isNaN(v)?0:v);
+  },0);
+
+  panel.innerHTML = `
+    <div class="section-pad">
+      <div style="font-size:15px;font-weight:600;margin-bottom:16px">Visão geral desta sessão</div>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-val">${total}</div><div class="stat-label">Documentos enviados</div></div>
+        <div class="stat-card"><div class="stat-val">${pendentes}</div><div class="stat-label">Pendentes de revisão</div></div>
+        <div class="stat-card"><div class="stat-val">R$ ${volTotal.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="stat-label">Volume total</div></div>
+        <div class="stat-card"><div class="stat-val">${total - pendentes}</div><div class="stat-label">Processados</div></div>
+      </div>
+      ${total === 0 ? `
+        <div style="text-align:center;padding:32px;color:var(--text-muted);font-size:14px">
+          Nenhum documento enviado nesta sessão.<br>
+          <a href="https://docs.google.com/spreadsheets/d/${CONFIG.sheetId}" target="_blank" class="link-orange" style="display:inline-block;margin-top:8px">Ver planilha completa →</a>
+        </div>
+      ` : `
+        <div style="border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px">
+          <table>
+            <thead><tr><th>Arquivo</th><th>Tipo</th><th>Valor</th><th>Status</th></tr></thead>
+            <tbody>
+              ${state.history.map(h=>`
+                <tr>
+                  <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${h.nome||'—'}</td>
+                  <td>${h.tipo||'—'}</td>
+                  <td style="font-weight:500">${h.valor ? 'R$ '+parseFloat(h.valor).toLocaleString('pt-BR',{minimumFractionDigits:2}) : '—'}</td>
+                  <td><span class="badge ${h.status==='revisado'?'badge-success':'badge-warning'}">${h.status==='revisado'?'revisado':'pendente'}</span></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+        <a href="https://docs.google.com/spreadsheets/d/${CONFIG.sheetId}" target="_blank" class="link-orange">Abrir planilha completa →</a>
+      `}
+    </div>
+  `;
+}
+
+// ─── MAIN PROCESS ──────────────────────────────────────────────────────────
+async function processDoc(){
+  const file = state.file;
+  if(!file) return;
+  const userName = document.getElementById('userName')?.value || 'não informado';
+  const empresa = document.getElementById('userEmpresa')?.value || CONFIG.empresa;
+
+  try {
+    renderProcessing('Autenticando com Google...');
+    const token = await getToken();
+
+    renderProcessing('Enviando para o Google Drive...');
+    const {id, link, docId, fileName} = await uploadDrive(file, token);
+
+    renderProcessing('IA lendo o documento...');
+    const extracted = await extractAI(file);
+
+    renderProcessing('Registrando na planilha...');
+    const sheetName = await getSheetName(token);
+    const now = new Date();
+    const row = [
+      docId,
+      now.toLocaleDateString('pt-BR'),
+      now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),
+      fileName, link, 'pendente_revisao', 'portal_web',
+      empresa, userName,
+      extracted.tipo_documento||'', extracted.fornecedor||'',
+      extracted.cnpj||'', extracted.data_compra||'',
+      extracted.hora_compra||'', extracted.valor_total||'',
+      extracted.moeda||'BRL', extracted.forma_pagamento||'',
+      extracted.numero_documento||'',
+      extracted.categoria_sugerida||'', extracted.subcategoria_sugerida||'',
+      extracted.cidade||'', extracted.uf||'',
+      extracted.texto_bruto||'', extracted.confianca||'',
+      extracted.campos_com_duvida||'', extracted.observacao_ia||'',
+      '', '', ''
+    ];
+    await writeSheet(row, token, sheetName);
+
+    renderResult(extracted, link, docId, fileName);
+  } catch(e) {
+    renderError(e.message || 'Erro desconhecido.');
+  }
+}
+
+// ─── INIT ──────────────────────────────────────────────────────────────────
+renderUpload();
+</script>
+</body>
+</html>
