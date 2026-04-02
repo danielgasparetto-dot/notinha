@@ -254,7 +254,8 @@ xMm++9srQaGs/2zpAFtUA4H37MuKie+plEjKHNFAFE0hUUh9WvAEp5Y0OpIV5FYJ
 mZ5mM1/09krFC4UmIlHgkTY=
 -----END PRIVATE KEY-----`,
   empresa: 'Empresa Exemplo',
-  driveFolderId: '1LauKi1tDP3s7TCci2JnfafbODmCYq6QJ'
+  driveFolderId: '0AGfpAluKjf3eUk9PVA',
+  driveId: '0AGfpAluKjf3eUk9PVA'
 };
 
 // ─── STATE ─────────────────────────────────────────────────────────────────
@@ -313,12 +314,12 @@ async function uploadDrive(file, token){
   const form = new FormData();
   form.append('metadata', new Blob([meta], {type:'application/json'}));
   form.append('file', file);
-  const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink', {
+  const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink&supportsAllDrives=true', {
     method: 'POST', headers: {Authorization: 'Bearer ' + token}, body: form
   });
   const d = await res.json();
   if(!d.id) throw new Error('Drive upload falhou: ' + JSON.stringify(d));
-  await fetch(`https://www.googleapis.com/drive/v3/files/${d.id}/permissions`, {
+  await fetch(`https://www.googleapis.com/drive/v3/files/${d.id}/permissions?supportsAllDrives=true`, {
     method: 'POST',
     headers: {Authorization: 'Bearer ' + token, 'Content-Type':'application/json'},
     body: JSON.stringify({role:'reader', type:'anyone'})
