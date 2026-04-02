@@ -254,7 +254,7 @@ xMm++9srQaGs/2zpAFtUA4H37MuKie+plEjKHNFAFE0hUUh9WvAEp5Y0OpIV5FYJ
 mZ5mM1/09krFC4UmIlHgkTY=
 -----END PRIVATE KEY-----`,
   empresa: 'Empresa Exemplo',
-  driveFolderId: '1zwbaSyqpIUNYub5tRTR2EY9x7bFhHDf3'
+driveFolderId: '1zwbaSyqpIUNYub5tRTR2EY9x7bFhHDf3',
 };
 
 // ─── STATE ─────────────────────────────────────────────────────────────────
@@ -309,8 +309,8 @@ async function uploadDrive(file, token){
   const safeName = file.name.replace(/\s+/g,'-');
   const docId = 'DOC-' + String(++state.docCounter).padStart(6,'0');
   const fileName = `${ts}_${safeName}`;
-  const meta = JSON.stringify({name: fileName, parents: [CONFIG.driveFolderId]});
-  const form = new FormData();
+const meta = JSON.stringify({name: fileName, parents: ['1zwbaSyqpIUNYub5tRTR2EY9x7bFhHDf3']});
+ const form = new FormData();
   form.append('metadata', new Blob([meta], {type:'application/json'}));
   form.append('file', file);
   const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink', {
